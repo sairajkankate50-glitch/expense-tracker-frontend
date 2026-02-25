@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-
-const API = "http://localhost:5000/api/transactions";
+const API = "https://expense-tracker-backend-35nf.onrender.com/api/transactions";
 
 function App() {
   const [transactions, setTransactions] = useState([]);
