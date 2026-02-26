@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-const API = "https://expense-tracker-backend-35nf.onrender.com/api/transactions";
+
+const API = "https://expense-tracker-backend-2-f78p.onrender.com/api/transactions";
 
 function App() {
   const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     title: "",
     amount: "",
@@ -12,8 +15,17 @@ function App() {
   });
 
   const fetchData = async () => {
-    const res = await axios.get(API);
-    setTransactions(res.data);
+    try {
+      setLoading(true);
+      const res = await axios.get(API);
+      setTransactions(res.data);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load data. Backend might be waking up...");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -22,28 +34,38 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await axios.post(API, form);
-    setForm({ title: "", amount: "", type: "expense", category: "" });
-    fetchData();
+    try {
+      await axios.post(API, form);
+      setForm({ title: "", amount: "", type: "expense", category: "" });
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add transaction");
+    }
   };
 
   const deleteItem = async (id) => {
-    await axios.delete(`${API}/${id}`);
-    fetchData();
+    try {
+      await axios.delete(`${API}/${id}`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete transaction");
+    }
   };
 
-  const balance = transactions.reduce(
-    (acc, item) =>
-      item.type === "income"
-        ? acc + item.amount
-        : acc - item.amount,
-    0
-  );
+  const balance = transactions.reduce((acc, item) => {
+    const amount = Number(item.amount) || 0;
+    return item.type === "income" ? acc + amount : acc - amount;
+  }, 0);
 
   return (
     <div style={{ maxWidth: 500, margin: "auto" }}>
       <h2>Expense Tracker</h2>
       <h3>Balance: ₹{balance}</h3>
+
+      {loading && <p>Loading...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
       <form onSubmit={handleSubmit}>
         <input
@@ -71,7 +93,7 @@ function App() {
           value={form.category}
           onChange={e => setForm({ ...form, category: e.target.value })}
         />
-        <button>Add</button>
+        <button type="submit">Add</button>
       </form>
 
       <ul>
